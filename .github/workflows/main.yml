@@ -1,0 +1,36 @@
+name: Sync Upstream Fork
+
+on:
+  schedule:
+    # 每天自动运行一次 (在UTC时间0点0分) (您可以修改这个 cron 表达式)
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    # 允许您手动触发
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      # 步骤 1：签出您自己的仓库
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
+
+      # 步骤 2：运行同步工具
+      - name: Sync Fork
+        uses: repo-sync/github-sync@v2
+        with:
+          # ▼▼▼▼▼▼▼▼▼▼ 关键：修改这里 ▼▼▼▼▼▼▼▼▼▼
+          # 换成这个项目“原始”仓库的地址
+          source_repo: "https://github.com/wliuy/DecoTV.git" 
+          # 确保原始仓库的分支名正确 (可能是 main 或 master)
+          source_branch: "main" 
+          # ▲▲▲▲▲▲▲▲▲▲ 关键：修改这里 ▲▲▲▲▲▲▲▲▲▲
+
+          # 您的目标分支 (通常是 main)
+          destination_branch: "main"
+
+          # 固定使用您在步骤1中设置的 PAT 密钥
+          github_token: ${{ secrets.PAT }}
+          sync_tags: "true"
