@@ -1,36 +1,43 @@
-name: Sync Upstream Fork
+name: Upstream Sync
+
+permissions:
+  contents: write
 
 on:
   schedule:
-    # 每天自动运行一次 (在UTC时间0点0分) (您可以修改这个 cron 表达式)
-    - cron: '0 0 * * *'
+    - cron: "0 0 * * *" # 每天一次
   workflow_dispatch:
-    # 允许您手动触发
 
 jobs:
-  sync:
+  sync_latest_from_upstream:
+    name: Sync latest commits from upstream repo
     runs-on: ubuntu-latest
+    if: ${{ github.event.repository.fork }}
+
     steps:
-      # 步骤 1：签出您自己的仓库
-      - name: Check out the repository
-        uses: actions/checkout@v4
+      - name: Checkout target repo
+        uses: actions/checkout@v3
+
+      - name: Sync upstream changes
+        id: sync
+        uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
         with:
-          fetch-depth: 0 
+          # ▼▼▼▼▼▼▼▼▼▼ 只需要改这下面两行 ▼▼▼▼▼▼▼▼▼▼
+          
+          # 1. 填原始仓库 (格式: 作者/项目名)
+          upstream_sync_repo: Decohererk/DecoTV
+          
+          # 2. 填原始分支 (注意区分 master 或 main)
+          upstream_sync_branch: main
+          
+          # ▲▲▲▲▲▲▲▲▲▲ 只需要改这上面两行 ▲▲▲▲▲▲▲▲▲▲
 
-      # 步骤 2：运行同步工具
-      - name: Sync Fork
-        uses: repo-sync/github-sync@v2
-        with:
-          # ▼▼▼▼▼▼▼▼▼▼ 关键：修改这里 ▼▼▼▼▼▼▼▼▼▼
-          # 换成这个项目“原始”仓库的地址
-          source_repo: "https://github.com/wliuy/DecoTV.git" 
-          # 确保原始仓库的分支名正确 (可能是 main 或 master)
-          source_branch: "main" 
-          # ▲▲▲▲▲▲▲▲▲▲ 关键：修改这里 ▲▲▲▲▲▲▲▲▲▲
+          target_sync_branch: main
+          target_repo_token: ${{ secrets.PAT }} # 您的密钥还在，直接用
+          test_mode: false
 
-          # 您的目标分支 (通常是 main)
-          destination_branch: "main"
-
-          # 固定使用您在步骤1中设置的 PAT 密钥
-          github_token: ${{ secrets.PAT }}
-          sync_tags: "true"
+      - name: Sync check
+        if: failure()
+        run: |
+          echo "[Error] 同步失败，请检查分支名是否正确。"
+          exit 1
